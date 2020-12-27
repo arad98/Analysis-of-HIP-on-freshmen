@@ -1,0 +1,39 @@
+---
+title: "ResearchProj"
+author: "Alec Radliff"
+date: "6/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(readxl)
+library(gapminder)
+library(tidyverse)
+studentdata <- read_excel("~/R/Data Research/studentdata.xlsx")
+View(studentdata) 
+```
+
+## R Markdown
+# shows undergraduate students who had HIP classes first and then students who had HIP classes later
+
+```{r newdatatable}
+newtable <- studentdata %>% 
+  select(`TimeToFirstHIP.(Yrs)`,CareerLevel,GraduatedByYr4) %>%
+  filter(CareerLevel == "UG") %>%
+  mutate(timing = if_else(`TimeToFirstHIP.(Yrs)` == 0,"Early HIP ","Late HIP")) %>%
+  mutate(timing = if_else(is.na(`TimeToFirstHIP.(Yrs)`),"Other",timing)) %>%
+  mutate(GraduatedByYr4 = if_else(GraduatedByYr4 == 0,"Dropped","Graduated")) %>%
+  group_by(timing,GraduatedByYr4) %>%
+  summarise(N = n()) %>%
+  mutate(percent = (N/sum(N)))
+
+
+ggplot(newtable,mapping = aes(x = timing,y = percent,fill = timing)) +
+  geom_col() + 
+  facet_grid(~GraduatedByYr4) +
+  ggtitle("Student graduation rate when taking HIP classes") +
+  labs(fill = "Legend" ,y = "Percent",x = "HIP Class Timing",subtitle = "Other columns are for students with no HIP data on record                       ") +
+  theme(axis.ticks.x = element_blank()) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1, scale = 100))
